@@ -26,7 +26,7 @@ export class AmplifyHostingStack extends Stack {
             }),
             environmentVariables: {
                 REGION: this.region,
-                IS_MOCK: 'true',
+                IS_MOCK: 'false',
                 USER_POOL_ID: props.userPoolId,
                 USER_POOL_CLIENT_ID: props.userPoolClientId,
                 IDENTITY_POOL_ID: props.identityPoolId,
