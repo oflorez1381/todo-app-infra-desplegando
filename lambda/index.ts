@@ -1,5 +1,17 @@
 const { v4: uuidv4 } = require('uuid');
 
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+    DynamoDBDocumentClient,
+    QueryCommand,
+    PutCommand,
+} = require("@aws-sdk/lib-dynamodb");
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+const TABLE_NAME = process.env.TABLE_NAME;
+
 export const handler = async (event: any = {}): Promise<any> => {
     console.log('Request received:', event);
 
@@ -41,25 +53,25 @@ export const handler = async (event: any = {}): Promise<any> => {
 async function getAllItems(id: string) {
     console.log('get all items');
 
-    // FAKE IT
-    const fakeItems = [
-        {
-            userId: id,
-            createdAt: Date.now().toString(),
-            todoId: '123',
-            title: 'Buy milk',
-            completed: false
+    //Get all items
+    const params = {
+        TableName: TABLE_NAME,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+            ':userId': id
         },
-        {
-            userId: id,
-            createdAt: Date.now().toString(),
-            todoId: '345',
-            title: 'Buy eggs',
-            completed: false
-        }
-    ]
+    };
 
-    return createResponse(200, fakeItems)
+    console.log(params);
+
+    const getCommand = new QueryCommand(params);
+    const getResponse = await docClient.send(getCommand);
+
+    if (!getResponse.Items) {
+        return createResponse(404, 'Item not found')
+    }
+
+    return createResponse(200, getResponse.Items)
 }
 
 async function createNewItem(title: string, userId: string) {
@@ -73,7 +85,20 @@ async function createNewItem(title: string, userId: string) {
         completed: false
     }
 
-    // FAKE IT
+    const params = {
+        TableName: TABLE_NAME,
+        Item: {
+            userId: newItem.userId,
+            createdAt: newItem.createdAt,
+            todoId: newItem.todoId,
+            title: newItem.title,
+            completed: newItem.completed
+        }
+    };
+
+    console.log(params);
+    const putCommand = new PutCommand(params);
+    await docClient.send(putCommand);
 
     return createResponse(200, newItem)
 }
