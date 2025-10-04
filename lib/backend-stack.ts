@@ -1,4 +1,4 @@
-import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 import path = require("path");
@@ -83,6 +83,19 @@ export class BackendStack extends Stack {
         const backendApi = new apigateway.RestApi(this, 'TodoWebAppAPIGateway', {
             restApiName: 'TodoWebAppBackendAPI',
             description: 'API Gateway for the TODO WebApp Backend',
+            defaultCorsPreflightOptions: {
+                allowOrigins: ['*'], // You should restrict this to specific domains in production
+                allowMethods: ['GET', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
+                allowHeaders: [
+                    'Content-Type',
+                    'Authorization',
+                    'X-Amz-Date',
+                    'X-Api-Key',
+                    'X-Amz-Security-Token'
+                ],
+                allowCredentials: true, // Set to true if you need to support credentials
+                maxAge: Duration.days(1) // Cache preflight results for 1 day (optional)
+            }
         });
 
         // Create an API Gateway resource and method

@@ -163,6 +163,10 @@ function createResponse(statusCode: number, body: any) {
         statusCode: statusCode,
         headers: {
             "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*', // Restrict this in production
+            'Access-Control-Allow-Credentials': true,
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+            'Access-Control-Allow-Methods': 'GET,POST,DELETE,PATCH,OPTIONS'
         },
         body: JSON.stringify(body)
     }
