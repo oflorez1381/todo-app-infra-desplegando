@@ -5,7 +5,8 @@ const {
     DynamoDBDocumentClient,
     QueryCommand,
     PutCommand,
-    DeleteCommand
+    DeleteCommand,
+    UpdateCommand
 } = require("@aws-sdk/lib-dynamodb");
 
 const client = new DynamoDBClient({});
@@ -44,7 +45,19 @@ export const handler = async (event: any = {}): Promise<any> => {
                 console.log('delete method');
                 return deleteItem(event.pathParameters.id)
             case 'PATCH':
-            // TO IMPLEMENT
+                // Handle PATCH /todos/{id} (update specific todo)
+                console.log('patch method');
+
+                const body = JSON.parse(event.body);
+                if (body.title) {
+                    console.log('updating item title');
+                    return updateItemTitle(event.pathParameters.id, body.title)
+
+                } else if (body.completed == true || body.completed == false) {
+                    return completeItem(event.pathParameters.id, body.completed)
+                }
+
+                break;
             default:
                 return createResponse(404, 'Method not found');
         }
@@ -154,6 +167,65 @@ async function deleteItem(todoId: string) {
     await docClient.send(deleteCommand);
 
     return createResponse(200, itemKey)
+}
+
+async function updateItemTitle(todoId: string, title: string) {
+    console.log('update item title');
+
+    const item = await getItemFromGSI(todoId);
+
+    const itemKey = {
+        userId: item.userId,
+        createdAt: item.createdAt
+    }
+
+    const params = {
+        TableName: TABLE_NAME,
+        Key: itemKey,
+        UpdateExpression: 'set title = :title',
+        ExpressionAttributeValues: {
+            ':title': title
+        },
+        ReturnValues: 'ALL_NEW'
+    };
+
+    console.log(params);
+
+    const updateCommand = new UpdateCommand(params);
+    await docClient.send(updateCommand);
+
+    item.title = title;
+    return createResponse(200, item)
+}
+
+
+async function completeItem(todoId: string, completed: boolean) {
+    console.log('complete item');
+
+    const item = await getItemFromGSI(todoId);
+
+    const itemKey = {
+        userId: item.userId,
+        createdAt: item.createdAt
+    }
+
+    const params = {
+        TableName: TABLE_NAME,
+        Key: itemKey,
+        UpdateExpression: 'set completed = :completed',
+        ExpressionAttributeValues: {
+            ':completed': completed
+        },
+        ReturnValues: 'ALL_NEW'
+    };
+
+    console.log(params);
+
+    const updateCommand = new UpdateCommand(params);
+    await docClient.send(updateCommand);
+
+    item.completed = completed
+    return createResponse(200, item)
 }
 
 function createResponse(statusCode: number, body: any) {
