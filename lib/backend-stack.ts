@@ -137,6 +137,7 @@ export class BackendStack extends Stack {
             }
         });
         todoWithId.addMethod('PATCH', integration, { // PATCH /todos/{id}
+            ...methodOptions,
             requestParameters: {
                 'method.request.path.id': true  // Makes the id parameter required
             }
