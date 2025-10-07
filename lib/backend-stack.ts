@@ -7,10 +7,17 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import { AttributeType, BillingMode, GlobalSecondaryIndexProps, Table } from "aws-cdk-lib/aws-dynamodb";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
+
+import { UserPool } from "aws-cdk-lib/aws-cognito";
+
+interface BackendStackProps extends StackProps {
+    readonly userPoolArn: string
+}
+
 export class BackendStack extends Stack {
     public readonly apiUrl: CfnOutput;
 
-    constructor(scope: Construct, id: string, props: StackProps) {
+    constructor(scope: Construct, id: string, props: BackendStackProps) {
         super(scope, id, props);
 
         /* Item schema:
@@ -99,17 +106,32 @@ export class BackendStack extends Stack {
             }
         });
 
+       const userPool = UserPool.fromUserPoolArn(this, 'ImportedUserPool', props.userPoolArn)
+
+        //Create authorizers
+        const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'TodoWebAppAuthorizer', {
+            cognitoUserPools: [userPool]
+        });
+
+        // Create method options with authorization
+        const methodOptions: apigateway.MethodOptions = {
+            authorizationType: apigateway.AuthorizationType.COGNITO,
+            authorizer: authorizer
+        };
+
+
         // Create an API Gateway resource and method
         const integration = new apigateway.LambdaIntegration(backendFunction);
 
         //Add resources and methods
         const todos = backendApi.root.addResource('todos');
-        todos.addMethod('GET', integration);
-        todos.addMethod('POST', integration);
+        todos.addMethod('GET', integration, methodOptions);
+        todos.addMethod('POST', integration, methodOptions);
 
         // Add /todos/{id} resource
         const todoWithId = todos.addResource('{id}');
         todoWithId.addMethod('DELETE', integration, { // DELETE /todos/{id}
+            ...methodOptions,
             requestParameters: {
                 'method.request.path.id': true  // Makes the id parameter required
             }
