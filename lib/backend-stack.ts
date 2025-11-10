@@ -16,6 +16,7 @@ interface BackendStackProps extends StackProps {
 
 export class BackendStack extends Stack {
     public readonly apiUrl: CfnOutput;
+    public readonly lambdaFunctionName: CfnOutput;
 
     constructor(scope: Construct, id: string, props: BackendStackProps) {
         super(scope, id, props);
@@ -148,5 +149,11 @@ export class BackendStack extends Stack {
             value: backendApi.url,
             description: 'API Gateway URL'
         });
+
+        this.lambdaFunctionName = new CfnOutput(this, 'TodoWebAppBackendFunctionName', {
+            value: backendFunction.functionName,
+            description: 'Backend Lambda Function Name'
+        });
+        
     }
 }

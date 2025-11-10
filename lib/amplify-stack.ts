@@ -15,6 +15,8 @@ interface AmplifyStackProps extends StackProps {
 
 export class AmplifyHostingStack extends Stack {
 
+    public readonly amplifyAppId: CfnOutput;
+
     constructor(scope: Construct, id: string, props: AmplifyStackProps) {
         super(scope, id, props);
 
@@ -55,6 +57,10 @@ export class AmplifyHostingStack extends Stack {
         new CfnOutput(this, 'AmplifyURL', {
             value: `https://main.${amplifyApp.defaultDomain}`,
         });
+
+        this.amplifyAppId = new CfnOutput(this, 'AmplifyAppId', {
+			value: amplifyApp.appId,
+		});
 
     }
 
